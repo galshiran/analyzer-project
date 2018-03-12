@@ -14,8 +14,8 @@ public class AnalyzerCounters {
 	/**
 	 * @param index
 	 *            index of the counter in the '__counters' list to increment. if
-	 *            the index >= from the size of the list, more elemants wiil be
-	 *            added to the list antil the wanted index will be initialized.
+	 *            the index >= from the size of the list, more elements will be
+	 *            added to the list until the wanted index will be initialized.
 	 */
 	public void incCount(int index) {
 

@@ -16,7 +16,7 @@ public class Driver {
 		
 		// =================== step 1 ===================
 		// add brackets for loops and conditions if missing
-		//analyzerUtils.BracketsCodeReformatter.bracketsReformatter(originalFilePath, reformattedFilePath);
+		analyzerUtils.BracketsCodeReformatter.bracketsReformatter(originalFilePath, reformattedFilePath);
 		
 		// =================== step 2 ===================
 		// reformat by google style code the original code and copy it to reformattedCodeFile

@@ -6,6 +6,5 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/codeAnalyzer"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/AnalyzerAbs"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/ComplexityAssessment"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/UserRequestController"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

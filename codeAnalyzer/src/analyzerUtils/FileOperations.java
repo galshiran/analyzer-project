@@ -10,11 +10,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 import analyzedClass.analyzedMethod.MethodInfo;
 import analyzedClass.analyzedMethod.MethodsDataSet;
 
 public class FileOperations {
+	
+	// public static Pattern slashStarComment = Pattern.compile("^(\\s|\\t)*/*(.*?)*/$");
+	// public static Pattern dpubleSlashComment = Pattern.compile("^(\\s|\\t)*//(.*?)*$");
 	
 	public static File createNewFile(String fileName, String filePathOnly) {
 		Path filePath = (filePathOnly != null ? Paths.get(filePathOnly + fileName) : Paths.get(fileName));
