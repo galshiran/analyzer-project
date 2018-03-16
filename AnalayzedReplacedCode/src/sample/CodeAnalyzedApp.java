@@ -16,20 +16,15 @@ import dynacode.DynaCode;
 
 public class CodeAnalyzedApp {
 
-	public static String thisClassPath = "C:\\Users\\USER\\Downloads\\JavaProject\\analyzerProject\\AnalayzedReplacedCode" ;
+	public static String thisClassPath = "C:\\javaCode\\a-c-project\\analyzer-project\\AnalayzedReplacedCode" ;
 
 	public static void main(String[] args) throws Exception  {
 
-		//		System.out.println(thisClassPath);
-
-		//		Object[] algoInputs = new Object[]{
-		//				(new int[]{190, 32, 250, 70, 60, 63, 21, 288, 12, 6, 9, 6, 45, 133, 16})
-		//				};
-		ArrayList<Object[]> algoInputs = getInputDataFromJson();
 		CodeAnalyze analyze = compileDynamicClassProcess();  // can throw exp
 
 		// ====================********************** ONI IS A FUCKIN BITCH **********************==================== //
 
+		ArrayList<Object[]> algoInputs = getInputDataFromJson();
 		ArrayList<AnalyzerSample> samples = codeSamplingProcess(analyze, algoInputs);
 		int[] results = ComplexityAssessmentAlgo.findBigOInSample(samples);
 		System.out.println(Arrays.toString(results));

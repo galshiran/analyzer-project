@@ -43,7 +43,7 @@ public class Driver {
 		
 		// =================== step 5 ===================
 		// start scanning and the code injection
-		analyzerAlgo.ForLoopInj.mainScanner(classContainer.getMethodsDataSet());
+		analyzerAlgo.CodeInjector.mainScanner(classContainer.getMethodsDataSet());
 		
 		
 		// =================== step 6 ===================

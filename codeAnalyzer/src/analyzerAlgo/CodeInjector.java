@@ -2,16 +2,20 @@ package analyzerAlgo;
 
 import java.util.ArrayList;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 import analyzedClass.analyzedMethod.MethodInfo;
 import analyzedClass.analyzedMethod.MethodOperations;
 import analyzedClass.analyzedMethod.MethodsDataSet;
 
-public class ForLoopInj {
+public class CodeInjector {
 
 	// Regular expressions for blocked / unblocked for loop:
 	protected final static String ForStartExp = "^(\\t|\\s)*for(\\s\\().*(\\{)";
-	protected final static String ForEmptyScopeExp = "^(\\t|\\s)*for(\\s\\().*(\\{\\})";
+	protected final static Pattern containsEmptyScopeLoop = Pattern.compile("^(\\t|\\s)*(for|while)( \\().*(\\{\\})");
+
+	
+	// const names of elements in the code
 	private final static String injectedCounterVarName = "analyzerCounters";
 
 	/**
@@ -37,7 +41,7 @@ public class ForLoopInj {
 
 	private static int methodInjector(MethodInfo methodInfo) {
 		ArrayList<StringBuilder> methodCode = methodInfo.methodCodeLines;
-		ArrayList<Integer[]> orderPairs = methodInfo.getDependentForStatementIndexPairs();
+		ArrayList<Integer[]> orderPairs = methodInfo.getDependentLoopStatementIndexPairs();
 
 		//		ArrayList<Integer[]> mostInnerPairs = new ArrayList<Integer[]>();
 		//		ArrayList<Integer[]> outerPairs = new ArrayList<Integer[]>();
@@ -68,7 +72,7 @@ public class ForLoopInj {
 				if(curEndScope < nextEndScope) { // the loop is 'most inner'
 					injectInnerLoop(methodCode, curStartScope + 1 + offset, injCount);
 					offset = (offset*2 + 1); // TODO: explain why 
-					injCount++;
+//					injCount++;
 				} else { // the loop is outer loop
 					injectOutterLoopEntryPoint(methodCode, curStartScope + 1 + offset, injCount); // shift all the code below one index down
 					offset++;
@@ -78,10 +82,11 @@ public class ForLoopInj {
 
 				String line = methodCode.get(curStartScope + offset).toString();
 				if (line.matches(ForStartExp)) { // might be unnecessary check
+					System.out.println(line.toString());
 					injectCounter(methodCode, curEndScope + offset, injCount+1); // shift all the code below one index down
 					offset++;
-				} else if (line.matches(ForEmptyScopeExp)) {
-					forLoopEmptyScopeInjector(methodCode, curEndScope + offset, injCount+1); // shift all the code below two index down
+				} else if (line.matches(containsEmptyScopeLoop.pattern())) {
+					injectEmptyScopeLoop(methodCode, curEndScope + offset, injCount+1); // shift all the code below two index down
 					offset += 2;
 				}
 				injCount++;
@@ -112,6 +117,28 @@ public class ForLoopInj {
 		methodCode.add(startLine, injectionCode);
 	}
 
+	/**
+	 * Handle the case of empty scope for loop separate the pair of curly braces
+	 * to separate lines inject the code between the two curly braces
+	 */
+	private static void injectEmptyScopeLoop(ArrayList<StringBuilder> codeBuffer, int location, int injCount) {
+		StringBuilder injectionCodeEndLoop = new StringBuilder(injectedCounterVarName + ".incCount(" + (injCount - 1) + ");");
+		StringBuilder line = codeBuffer.get(location);
+		line.setLength(line.length() - 1);
+		codeBuffer.add(location + 1, injectionCodeEndLoop);
+		codeBuffer.add(location + 2, new StringBuilder("}"));
+
+	}
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	/**
 	 * @param allPeirs 
 	 * 				all the index-pairs of found for loops (dependent).
@@ -154,10 +181,10 @@ public class ForLoopInj {
 				int endScope = MethodOperations.findEndOfScope(currentScope, i);
 				injCount = findMostInnerFor(currentScope, i + 1, endScope, injCount);
 				i = endScope;
-			} else if (line.matches(ForEmptyScopeExp)) {
+			} else if (line.matches(containsEmptyScopeLoop.pattern())) {
 				foundFor = true;
 				injCount++;
-				forLoopEmptyScopeInjector(currentScope, i, injCount);
+				injectEmptyScopeLoop(currentScope, i, injCount);
 				i += 2;
 			}
 		}
@@ -176,16 +203,5 @@ public class ForLoopInj {
 		currentScope.add(endLine, injectionCodeEndLoop);
 	}
 
-	/**
-	 * Handle the case of empty scope for loop separate the pair of curly braces
-	 * to separate lines inject the code between the two curly braces
-	 */
-	private static void forLoopEmptyScopeInjector(ArrayList<StringBuilder> codeBuffer, int location, int injCount) {
-		StringBuilder injectionCodeEndLoop = new StringBuilder(injectedCounterVarName + ".incCount(" + (injCount - 1) + ");");
-		StringBuilder line = codeBuffer.get(location);
-		line.setLength(line.length() - 1);
-		codeBuffer.add(location + 1, injectionCodeEndLoop);
-		codeBuffer.add(location + 2, new StringBuilder("}"));
-
-	}
+	
 }
