@@ -43,7 +43,7 @@ public class MethodInfo {
 	 * 
 	 * @return Order pairs of dependent for statement
 	 */
-	public ArrayList<Integer[]> getDependentForStatementIndexPairs() {
-		return MethodAnalyzer.findDependentForStatements(method ,methodCodeLines);
+	public ArrayList<Integer[]> getDependentLoopStatementIndexPairs() {
+		return MethodAnalyzer.findDependentLoopStatements(method ,methodCodeLines);
 	}
 }

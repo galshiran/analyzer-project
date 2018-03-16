@@ -15,6 +15,14 @@ public class FindMaxElement_B {
 					arr[j] = temp;
 				}
 			}
+			int m = 0;
+			while(m < 10) {
+				m++;
+			}
+		}
+		int i = 0;
+		while(i < arr.length) {
+			i++;
 		}
 
 		return arr[arr.length - 1];

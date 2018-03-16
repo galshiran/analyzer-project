@@ -3,8 +3,20 @@ package analyzedClass.analyzedMethod;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 public class MethodAnalyzer {
+
+	// note : all the patterns will match non empty scop loops
+	private static Pattern containsForLoopStatement =  Pattern.compile("for \\((.*);(.*);(.*)\\).*\\{") ;
+	private static int[] forLoopConditionLocations = {1,2};
+	private static Pattern containsWhileLoopStatement = Pattern.compile("while \\((.*)\\).*\\{") ;
+	private static int[] whileLoopConditionLocations = {1};
+	private static Pattern containsForEachLoopStatement =  Pattern.compile("for \\((.*):(.*)\\).*\\{") ;
+	private static int[] forEachLoopConditionLocations = {2};
+
 
 	public MethodAnalyzer() {}
 
@@ -19,22 +31,53 @@ public class MethodAnalyzer {
 	 * @return list of ordered pairs , first contains index of the dependent for
 	 *         statements, the second contains the index of the end.
 	 */
-	public static ArrayList<Integer[]> findDependentForStatements(Method method, ArrayList<StringBuilder> methodCode) {
+	public static ArrayList<Integer[]> findDependentLoopStatements(Method method, ArrayList<StringBuilder> methodCode) {
+
+		// scan all the method's code lines
 
 		ArrayList<String> paramsNames = MethodAnalyzer.getParametersNames(method);
-		ArrayList<Integer[]> orderedPairdependentForLoopLines = new ArrayList<Integer[]>();
+		ArrayList<Integer[]> orderedPairdependentLoopLines = new ArrayList<Integer[]>();
 		int lineIndex = 0;
+
 		for (StringBuilder line : methodCode) {
+			// step 1 - update the dependencies parameters
 			MethodAnalyzer.scanForMoreDependenciesParameters(line, paramsNames);
-			if (MethodAnalyzer.isCodeLineIsForStatement(line)) {
-				if (MethodAnalyzer.isForLoopDependent(line, paramsNames)) {
+
+			// step 2 - check for any loop satement
+
+			// =========== regular for loop
+			Matcher forStatementMatcher = isCodeLineMatchePattern(containsForLoopStatement, line);
+			if (forStatementMatcher != null) {
+				if (MethodAnalyzer.isStatementDependent(forStatementMatcher, forLoopConditionLocations, paramsNames)) {
 					int endScope = MethodOperations.findEndOfScope(methodCode, lineIndex);
-					orderedPairdependentForLoopLines.add(new Integer[]{lineIndex,endScope});
+					orderedPairdependentLoopLines.add(new Integer[]{lineIndex,endScope});
+				}			
+				lineIndex++;
+				continue; // next iteretion
+			} 
+
+			// =========== while loop
+			Matcher whileStatementMatcher = isCodeLineMatchePattern(containsWhileLoopStatement, line);
+			if (whileStatementMatcher != null) {
+				if (MethodAnalyzer.isStatementDependent(whileStatementMatcher, whileLoopConditionLocations, paramsNames)) {
+					int endScope = MethodOperations.findEndOfScope(methodCode, lineIndex);
+					orderedPairdependentLoopLines.add(new Integer[]{lineIndex,endScope});
+				}
+				lineIndex++;
+				continue; // next iteretion
+			}
+
+			// =========== forEach loop
+			Matcher forEachStatementMatcher = isCodeLineMatchePattern(containsForEachLoopStatement, line);
+			if (forEachStatementMatcher != null) {
+				if (MethodAnalyzer.isStatementDependent(forEachStatementMatcher, forEachLoopConditionLocations, paramsNames)) {
+					int endScope = MethodOperations.findEndOfScope(methodCode, lineIndex);
+					orderedPairdependentLoopLines.add(new Integer[]{lineIndex,endScope});
 				}
 			}
 			lineIndex++;
 		}
-		return orderedPairdependentForLoopLines;
+		return orderedPairdependentLoopLines;
 	}
 
 	/**	Scan the current line and check if there is new assignments of method's parameters,
@@ -139,41 +182,82 @@ public class MethodAnalyzer {
 	 * @return true if the for code line effected by any of the parameters in
 	 *         paramsNames list, else false.
 	 */
-	public static boolean isForLoopDependent(StringBuilder line, ArrayList<String> paramsNames) {
+	//	public static boolean isForLoopDependent(Matcher forStatementMatcher, ArrayList<String> paramsNames) {
+	//		boolean isDependent = false;
+	////		Matcher forLoopStatementContantMatcher = forLoopStatementContant.matcher(line);
+	////		Matcher forEachLoopStatementContantMatcher = forEachLoopStatementContant.matcher(line);
+	//
+	//		// check if the method contains the code line receives any parameters
+	//		if (paramsNames.size() > 0) {
+	//			// same for - reqular for and forEach 
+	//			String condition = forStatementMatcher.group(2);
+	//			if (MethodAnalyzer.isContainsParam(condition, paramsNames)) {
+	//				isDependent = true;
+	//			}
+	//		}
+	//		/*
+	//			StringBuilder lineCopy = new StringBuilder(line);
+	//			int startInnerExpretion = lineCopy.indexOf("for (");
+	//			 if finds "for (" substring
+	//			if (forLoopStatementContantMatcher.find()) {
+	//				// override lineCopy value with the substring from "for (" to
+	//				// the end
+	////				lineCopy.replace(0, lineCopy.length(), lineCopy.substring(startInnerExpretion));
+	////				String statment = lineCopy.toString();
+	//				// if classic for loop statement
+	////				if (statment.matches("^.*(;).*(;).*$")) {
+	//					// statement is "int i = 0; i < var; i++" ==>
+	//					// parts[0]="int i = 0" ,parts[1]="i < var" ,parts[2]="i++"
+	////					String[] parts = statment.split("(\\s)*;(\\s)*");
+	//				String condition = forLoopStatementContantMatcher.group(2);
+	//					if (MethodAnalyzer.isContainsParam(condition, paramsNames)) {
+	//						isDependent = true;
+	//					}
+	//				}
+	//				// if for each loop statement
+	//				else if (forEachLoopStatementContantMatcher.find()) {
+	//					// statement is "String str : stringArray" ==>
+	//					// parts[0] = "String str" , parts[1]= "stringArray"
+	////					String[] parts = statment.split("(\\s)*:(\\s)*");
+	//					String condition = forEachLoopStatementContantMatcher.group(2);
+	//					if (MethodAnalyzer.isContainsParam(condition, paramsNames)) {
+	//						isDependent = true;
+	//					}
+	//				}
+	//			}
+	//			*/
+	//		return isDependent;
+	//	}
+
+
+	private static boolean isStatementDependent(Matcher statementMatcher,int[] groupNumbers, ArrayList<String> paramsNames) {
 		boolean isDependent = false;
 		// check if the method contains the code line receives any parameters
 		if (paramsNames.size() > 0) {
-
-			StringBuilder lineCopy = new StringBuilder(line);
-			int startInnerExpretion = lineCopy.indexOf("for (");
-			// if finds "for (" substring
-			if (startInnerExpretion != -1) {
-				// override lineCopy value with the substring from "for (" to
-				// the end
-				lineCopy.replace(0, lineCopy.length(), lineCopy.substring(startInnerExpretion));
-				String statment = lineCopy.toString();
-				// if classic for loop statement
-				if (statment.matches("^.*(;).*(;).*$")) {
-					// statement is "int i = 0; i < var; i++" ==>
-					// parts[0]="int i = 0" ,parts[1]="i < var" ,parts[2]="i++"
-					String[] parts = statment.split("(\\s)*;(\\s)*");
-					if (MethodAnalyzer.isContainsParam(parts[1], paramsNames)) {
-						isDependent = true;
-					}
-				}
-				// if for each loop statement
-				else if (statment.matches("^.*(:).*$")) {
-					// statement is "String str : stringArray" ==>
-					// parts[0] = "String str" , parts[1]= "stringArray"
-					String[] parts = statment.split("(\\s)*:(\\s)*");
-					if (MethodAnalyzer.isContainsParam(parts[1], paramsNames)) {
-						isDependent = true;
-					}
+			for(int n : groupNumbers) {
+				String condition = statementMatcher.group(n);
+				if (MethodAnalyzer.isContainsParam(condition, paramsNames)) {
+					isDependent = true;
+					break;
 				}
 			}
+
 		}
 		return isDependent;
 	}
+
+	//	private static boolean isWhileLoopDependent(Matcher whileStatementMatcher, ArrayList<String> paramsNames) {
+	//		boolean isDependent = false;
+	//		// check if the method contains the code line receives any parameters
+	//		if (paramsNames.size() > 0) {
+	//			// same for - reqular for and forEach 
+	//			String condition = whileStatementMatcher.group(1);
+	//			if (MethodAnalyzer.isContainsParam(condition, paramsNames)) {
+	//				isDependent = true;
+	//			}
+	//		}
+	//		return isDependent;
+	//	}
 
 	/*
 	 * ... 
@@ -200,8 +284,18 @@ public class MethodAnalyzer {
 		return paramsNames;
 	}
 
-	private static boolean isCodeLineIsForStatement(StringBuilder line) {
-		return line.toString().matches("^(\\s|\\t)*(for \\()(.*)$");
+
+	// used to match any code line to for / forEach / while statement patterns 
+	private static Matcher isCodeLineMatchePattern(Pattern patterm, StringBuilder line) {
+		Matcher matcher = patterm.matcher(line);
+		if(matcher.find()) {
+			return matcher;
+		} else {
+			return null;
+		}
 	}
+
+
+
 
 }
